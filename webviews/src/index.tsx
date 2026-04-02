@@ -1,10 +1,20 @@
-import React from "react";
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Todos } from './components/Todos';
+import './components/Todos.css';
 
+declare global {
+  interface Window {
+    acquireVsCodeApi: () => {
+      postMessage: (message: unknown) => void;
+    };
+  }
+}
 
-import { createRoot } from "react-dom/client";
+const container = document.getElementById('root');
+if (!container) {
+  throw new Error('Root element not found');
+}
 
-
-const container = document.body;
 const root = createRoot(container);
-// App is the component
-root.render(<h1>Hwllow from react</h1>);
+root.render(<Todos />);

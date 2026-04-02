@@ -1,93 +1,120 @@
-import * as vscode from "vscode";
-
-import { getNonce } from "./helpers/getNonce";
-
+import * as vscode from 'vscode';
+import { getNonce } from './helpers/getNonce';
+import {
+  loadTodos,
+  addTodo,
+  toggleTodo,
+  deleteTodo,
+} from './todoStorage';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
-  _view?: vscode.WebviewView;
-  _doc?: vscode.TextDocument;
+  private readonly _extensionUri: vscode.Uri;
+  private readonly _globalState: vscode.Memento;
+  private _view?: vscode.WebviewView;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {}
+  constructor(extensionUri: vscode.Uri, globalState: vscode.Memento) {
+    this._extensionUri = extensionUri;
+    this._globalState = globalState;
+  }
 
-  public resolveWebviewView(webviewView: vscode.WebviewView) {
+  public resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView;
 
     webviewView.webview.options = {
-      // Allow scripts in the webview
       enableScripts: true,
-
       localResourceRoots: [this._extensionUri],
-      
     };
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (data) => {
-      switch (data.type) {
-        
-        case "onInfo": {
-          if (!data.value) {
-            return;
-          }
-          vscode.window.showInformationMessage(data.value);
-          break;
-        }
-        case "onError": {
-          if (!data.value) {
-            return;
-          }
-          vscode.window.showErrorMessage(data.value);
-          break;
-        }
-        // case "tokens": {
-        //   await Util.globalState.update(accessTokenKey, data.accessToken);
-        //   await Util.globalState.update(refreshTokenKey, data.refreshToken);
-        //   break;
-        // }
-      }
+      await this._handleMessage(data);
     });
   }
 
-  public revive(panel: vscode.WebviewView) {
-    this._view = panel;
+  public revive(webviewView: vscode.WebviewView): void {
+    this._view = webviewView;
   }
 
-  private _getHtmlForWebview(webview: vscode.Webview) {
+  private async _handleMessage(
+    data: unknown
+  ): Promise<void> {
+    const message = data as { type: string; text?: string; id?: number };
+
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+    if (!workspaceUri) {
+      this._view?.webview.postMessage({
+        type: 'error',
+        error: 'No workspace folder open',
+      });
+      return;
+    }
+
+    let todos;
+    switch (message.type) {
+      case 'load':
+        todos = loadTodos(workspaceUri, this._globalState);
+        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        break;
+
+      case 'add':
+        if (!message.text) {
+          return;
+        }
+        todos = addTodo(workspaceUri, this._globalState, message.text);
+        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        break;
+
+      case 'toggle':
+        if (typeof message.id !== 'number') {
+          return;
+        }
+        todos = toggleTodo(workspaceUri, this._globalState, message.id);
+        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        break;
+
+      case 'delete':
+        if (typeof message.id !== 'number') {
+          return;
+        }
+        todos = deleteTodo(workspaceUri, this._globalState, message.id);
+        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  private _getHtmlForWebview(webview: vscode.Webview): string {
+    const nonce = getNonce();
+
     const styleResetUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "media", "reset.css")
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css')
     );
 
     const styleVSCodeUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "media", "vscode.css")
-      );
-      
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Sidebar.js")
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css')
     );
 
-
-    // Use a nonce to only allow a specific script to be run.
-    const nonce = getNonce();
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'out', 'compiled', 'index.js')
+    );
 
     return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<!--
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-        -->
-        <meta http-equiv="Content-Security-Policy" content=" img-src vscode-webview://1d50e3n83684tcv8palmicacretgpt8ottmh8nut620cv4bmera1: https: data: ; style-src 'unsafe-inline' ${
-      webview.cspSource
-    }; script-src 'nonce-${nonce}';">
+        <meta http-equiv="Content-Security-Policy" content="img-src ${webview.cspSource} https: data:; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
-        <script nonce="${nonce}" >
-          const tsvscode = acquireVsCodeApi();
-        </script>
 			</head>
       <body>
+        <div id="root"></div>
+        <script nonce="${nonce}">
+          window.tsvscode = acquireVsCodeApi();
+        </script>
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
 			</html>`;

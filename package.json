@@ -32,28 +32,28 @@
         }
       ],
       "explorer": [
-				{
-					"id": "jsonOutline",
-					"name": "Json Outline",
-					"when": "jsonOutlineEnabled"
-				},
-				{
-					"id": "ftpExplorer",
-					"name": "FTP Explorer"
-				},
-				{
-					"id": "fileExplorer",
-					"name": "File Explorer"
-				},
-				{
-					"id": "testView",
-					"name": "Test View"
-				},
-				{
-					"id": "testViewDragAndDrop",
-					"name": "Test View Drag and Drop"
-				}
-			]
+        {
+          "id": "jsonOutline",
+          "name": "Json Outline",
+          "when": "jsonOutlineEnabled"
+        },
+        {
+          "id": "ftpExplorer",
+          "name": "FTP Explorer"
+        },
+        {
+          "id": "fileExplorer",
+          "name": "File Explorer"
+        },
+        {
+          "id": "testView",
+          "name": "Test View"
+        },
+        {
+          "id": "testViewDragAndDrop",
+          "name": "Test View Drag and Drop"
+        }
+      ]
     },
     "commands": [
       {
@@ -102,6 +102,7 @@
     "rollup-plugin-dts": "^5.3.0",
     "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-peer-deps-external": "^2.2.4",
+    "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-serve": "^2.0.2",
     "rollup-plugin-typescript2": "^0.35.0",
     "ts-loader": "^9.4.2",
