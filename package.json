@@ -2,7 +2,7 @@
   "name": "taskdock",
   "displayName": "TaskDock",
   "description": "A lightweight sidebar todo list for managing per-project tasks inside VS Code.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "shahhassan",
   "repository": {
     "type": "git",
