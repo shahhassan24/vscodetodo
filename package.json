@@ -9,7 +9,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:todolist-sidebar"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -30,47 +32,20 @@
           "icon": "media/icon.svg",
           "contextualTitle": "ToDo"
         }
-      ],
-      "explorer": [
-        {
-          "id": "jsonOutline",
-          "name": "Json Outline",
-          "when": "jsonOutlineEnabled"
-        },
-        {
-          "id": "ftpExplorer",
-          "name": "FTP Explorer"
-        },
-        {
-          "id": "fileExplorer",
-          "name": "File Explorer"
-        },
-        {
-          "id": "testView",
-          "name": "Test View"
-        },
-        {
-          "id": "testViewDragAndDrop",
-          "name": "Test View Drag and Drop"
-        }
       ]
-    },
-    "commands": [
-      {
-        "command": "todo-list.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "todo-list.webviewPanel",
-        "title": "WebView Panel"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack",
-    "watch": "concurrently \"rollup -c -w\" \"webpack --watch --config webpack.config.js\" ",
-    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile": "npm run compile-webview && npm run compile-extension",
+    "compile-extension": "webpack",
+    "compile-webview": "vite build --mode development",
+    "watch": "concurrently -k \"npm:watch-webview\" \"npm:watch-extension\"",
+    "watch-extension": "webpack --watch --config webpack.config.js",
+    "watch-webview": "vite build --watch --mode development",
+    "package": "npm run package-webview && npm run package-extension",
+    "package-extension": "webpack --mode production --devtool hidden-source-map",
+    "package-webview": "vite build --mode production",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
@@ -78,13 +53,6 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.22.5",
-    "@babel/preset-react": "^7.22.5",
-    "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-commonjs": "^25.0.2",
-    "@rollup/plugin-node-resolve": "^15.1.0",
-    "@rollup/plugin-replace": "^5.0.2",
-    "@rollup/plugin-typescript": "^11.1.2",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
@@ -98,16 +66,10 @@
     "file-loader": "^6.2.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
-    "rollup": "^3.25.3",
-    "rollup-plugin-dts": "^5.3.0",
-    "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-peer-deps-external": "^2.2.4",
-    "rollup-plugin-postcss": "^4.0.2",
-    "rollup-plugin-serve": "^2.0.2",
-    "rollup-plugin-typescript2": "^0.35.0",
     "ts-loader": "^9.4.2",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6",
+    "vite": "^5.4.19",
     "webpack": "^5.81.0",
     "webpack-cli": "^5.0.2"
   },

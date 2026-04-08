@@ -45,5 +45,14 @@ const config = {
       },
     ],
   },
+  watchOptions: {
+    ignored: [
+      '**/.git/**',
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/out/**',
+    ],
+    poll: 1000,
+  },
 };
 module.exports = config;
