@@ -117,11 +117,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   <link href="${styleWebviewUri}" rel="stylesheet">
 </head>
 <body>
-  <div id="root"><p style="padding:12px;color:#ccc;">Loading todo list...</p></div>
+  <div id="root" class="webview-root-loading">Loading todo list...</div>
   <script nonce="${nonce}">
     window.onerror = function(msg, src, line, col, err) {
       document.getElementById('root').innerHTML =
-        '<pre style="padding:12px;color:#f14c4c;font-size:12px;white-space:pre-wrap;">' +
+        '<pre class="boot-error">' +
         'Script error:\\n' + msg + '\\nSource: ' + src + '\\nLine: ' + line +
         (err ? '\\n' + err.stack : '') + '</pre>';
     };
