@@ -1,10 +1,15 @@
 {
-  "name": "todo-list",
-  "displayName": "todo list",
-  "description": "todo list for vscode",
+  "name": "taskdock",
+  "displayName": "TaskDock",
+  "description": "A lightweight sidebar todo list for managing per-project tasks inside VS Code.",
   "version": "0.0.1",
+  "publisher": "shahhassan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lordshady/vscodetodo"
+  },
   "engines": {
-    "vscode": "^1.79.0"
+    "vscode": "^1.110.0"
   },
   "categories": [
     "Other"
