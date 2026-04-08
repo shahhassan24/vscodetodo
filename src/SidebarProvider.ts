@@ -25,11 +25,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
+    // Register message handler BEFORE setting HTML to avoid race conditions
     webviewView.webview.onDidReceiveMessage(async (data) => {
       await this._handleMessage(data);
     });
+
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
   }
 
   public revive(webviewView: vscode.WebviewView): void {
@@ -98,7 +99,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     );
 
     const styleWebviewUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, 'dist', 'style.css')
+      vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview.css')
     );
 
     const scriptUri = webview.asWebviewUri(
@@ -106,22 +107,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     );
 
     return `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="img-src ${webview.cspSource} https: data:; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}';">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link href="${styleResetUri}" rel="stylesheet">
-				<link href="${styleVSCodeUri}" rel="stylesheet">
-        <link href="${styleWebviewUri}" rel="stylesheet">
-			</head>
-      <body>
-        <div id="root"></div>
-        <script nonce="${nonce}">
-          window.tsvscode = acquireVsCodeApi();
-        </script>
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="img-src ${webview.cspSource} https: data:; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="${styleResetUri}" rel="stylesheet">
+  <link href="${styleVSCodeUri}" rel="stylesheet">
+  <link href="${styleWebviewUri}" rel="stylesheet">
+</head>
+<body>
+  <div id="root"><p style="padding:12px;color:#ccc;">Loading todo list...</p></div>
+  <script nonce="${nonce}">
+    window.onerror = function(msg, src, line, col, err) {
+      document.getElementById('root').innerHTML =
+        '<pre style="padding:12px;color:#f14c4c;font-size:12px;white-space:pre-wrap;">' +
+        'Script error:\\n' + msg + '\\nSource: ' + src + '\\nLine: ' + line +
+        (err ? '\\n' + err.stack : '') + '</pre>';
+    };
+  </script>
+  <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`;
   }
 }

@@ -27,14 +27,6 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.(png|jpe?g|gif)$/i,
-        use: [
-          {
-            loader: 'file-loader',
-          },
-        ],
-      },
-      {
         test: /\.ts$/,
         exclude: /node_modules/,
         use: [

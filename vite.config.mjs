@@ -3,6 +3,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
   return {
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(mode),
+    },
     build: {
       outDir: 'dist',
       emptyOutDir: false,
@@ -13,6 +16,7 @@ export default defineConfig(({ mode }) => {
         formats: ['iife'],
         name: 'TodoListWebview',
         fileName: () => 'webview.js',
+        cssFileName: 'webview',
       },
     },
   };

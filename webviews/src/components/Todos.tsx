@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface Todo {
   id: number;
@@ -17,32 +17,32 @@ declare global {
   }
 }
 
-const getVsCodeApi = (): VsCodeApi => {
-  return window.acquireVsCodeApi();
-};
+const vscode = window.acquireVsCodeApi();
 
 export const Todos: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const vscode = getVsCodeApi();
-
     const handleMessage = (event: MessageEvent): void => {
-      const message = event.data as { type: string; data?: Todo[]; error?: string };
+      const message = event.data;
+      if (!message || typeof message.type !== 'string') {
+        return;
+      }
 
       if (message.type === 'todos') {
         setTodos(message.data || []);
         setIsLoading(false);
+        setError(null);
       } else if (message.type === 'error') {
-        console.error('Error from extension:', message.error);
+        setError(message.error || 'Unknown error');
         setIsLoading(false);
       }
     };
 
     window.addEventListener('message', handleMessage);
-
     vscode.postMessage({ type: 'load' });
 
     return () => {
@@ -54,22 +54,15 @@ export const Todos: React.FC = () => {
     if (newTodo.trim() === '') {
       return;
     }
-
-    const vscode = getVsCodeApi();
-    vscode.postMessage({
-      type: 'add',
-      text: newTodo.trim(),
-    });
+    vscode.postMessage({ type: 'add', text: newTodo.trim() });
     setNewTodo('');
   }, [newTodo]);
 
   const toggleTodo = useCallback((id: number) => {
-    const vscode = getVsCodeApi();
     vscode.postMessage({ type: 'toggle', id });
   }, []);
 
   const deleteTodo = useCallback((id: number) => {
-    const vscode = getVsCodeApi();
     vscode.postMessage({ type: 'delete', id });
   }, []);
 
@@ -82,17 +75,49 @@ export const Todos: React.FC = () => {
   if (isLoading) {
     return (
       <div className="loading-container">
-        <span>Loading todos...</span>
+        <span>Loading...</span>
       </div>
     );
   }
 
+  const completedCount = todos.filter((t) => t.completed).length;
+  const progress = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
+
   return (
     <div className="todos-container">
-      <h3 className="center-heading">Project Todos</h3>
+      <div className="add-todo-form">
+        <input
+          className="todo-input"
+          type="text"
+          placeholder="What needs to be done?"
+          value={newTodo}
+          onChange={(e) => setNewTodo(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <button className="add-button" onClick={addTodo}>
+          Add
+        </button>
+      </div>
 
-      {todos.length === 0 ? (
-        <p className="empty-message">No todos yet. Add one below!</p>
+      {error && <p className="error-message">{error}</p>}
+
+      {todos.length > 0 && (
+        <div className="progress-section">
+          <div className="progress-info">
+            <span>{completedCount}/{todos.length} done</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
+
+      {todos.length === 0 && !error ? (
+        <div className="empty-state">
+          <div className="empty-icon">&#9745;</div>
+          <div className="empty-text">No todos yet</div>
+        </div>
       ) : (
         <ul className="todos-list">
           {todos.map((todo) => (
@@ -100,50 +125,30 @@ export const Todos: React.FC = () => {
               key={todo.id}
               className={`todo-item ${todo.completed ? 'completed' : ''}`}
             >
+              <button
+                className="todo-checkbox"
+                onClick={() => toggleTodo(todo.id)}
+                title={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
+              >
+                {todo.completed ? '✓' : ''}
+              </button>
               <span
                 className="todo-text"
                 onClick={() => toggleTodo(todo.id)}
               >
                 {todo.text}
               </span>
-              <span className="todo-actions">
-                <button
-                  className="icon-button check-button"
-                  onClick={() => toggleTodo(todo.id)}
-                  title={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
-                >
-                  ✓
-                </button>
-                <button
-                  className="icon-button delete-button"
-                  onClick={() => deleteTodo(todo.id)}
-                  title="Delete todo"
-                >
-                  ✕
-                </button>
-              </span>
+              <button
+                className="delete-button"
+                onClick={() => deleteTodo(todo.id)}
+                title="Delete"
+              >
+                ✕
+              </button>
             </li>
           ))}
         </ul>
       )}
-
-      <div className="add-todo-form">
-        <input
-          className="text-field-center"
-          type="text"
-          placeholder="Add a new todo..."
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <button className="center-button" onClick={addTodo}>
-          Add Todo
-        </button>
-      </div>
-
-      <div className="todo-stats">
-        {todos.length} todo{todos.length !== 1 ? 's' : ''} · {todos.filter((t) => t.completed).length} completed
-      </div>
     </div>
   );
 };
