@@ -9,7 +9,7 @@
     "url": "https://github.com/lordshady/vscodetodo"
   },
   "engines": {
-    "vscode": "^1.110.0"
+    "vscode": "^1.79.0"
   },
   "categories": [
     "Other"
@@ -58,7 +58,7 @@
     "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/vscode": "^1.110.0",
+    "@types/vscode": "~1.79.0",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
     "eslint": "^10.2.0",
