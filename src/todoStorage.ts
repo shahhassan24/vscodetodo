@@ -7,27 +7,45 @@ export interface Todo {
   createdAt: number;
 }
 
-const getTodoKey = (workspaceUri: vscode.Uri): string => {
+const WORKSPACE_TODOS_KEY = 'todos';
+
+const getLegacyTodoKey = (workspaceUri: vscode.Uri): string => {
   return `todos-${workspaceUri.path}`;
 };
 
-export const loadTodos = (workspaceUri: vscode.Uri, globalState: vscode.Memento): Todo[] => {
-  const key = getTodoKey(workspaceUri);
-  const todos = globalState.get<Todo[]>(key);
-  return todos || [];
-};
-
-export const saveTodos = (workspaceUri: vscode.Uri, globalState: vscode.Memento, todos: Todo[]): void => {
-  const key = getTodoKey(workspaceUri);
-  globalState.update(key, todos);
-};
-
-export const addTodo = (
+export const loadTodos = async (
   workspaceUri: vscode.Uri,
-  globalState: vscode.Memento,
+  workspaceState: vscode.Memento,
+  globalState: vscode.Memento
+): Promise<Todo[]> => {
+  const workspaceTodos = workspaceState.get<Todo[]>(WORKSPACE_TODOS_KEY);
+  if (workspaceTodos) {
+    return workspaceTodos;
+  }
+
+  const legacyKey = getLegacyTodoKey(workspaceUri);
+  const legacyTodos = globalState.get<Todo[]>(legacyKey);
+  if (!legacyTodos) {
+    return [];
+  }
+
+  await workspaceState.update(WORKSPACE_TODOS_KEY, legacyTodos);
+  await globalState.update(legacyKey, undefined);
+  return legacyTodos;
+};
+
+export const saveTodos = async (
+  workspaceState: vscode.Memento,
+  todos: Todo[]
+): Promise<void> => {
+  await workspaceState.update(WORKSPACE_TODOS_KEY, todos);
+};
+
+export const addTodo = async (
+  todos: Todo[],
+  workspaceState: vscode.Memento,
   text: string
-): Todo[] => {
-  const todos = loadTodos(workspaceUri, globalState);
+): Promise<Todo[]> => {
   const newTodo: Todo = {
     id: Date.now(),
     text,
@@ -35,30 +53,28 @@ export const addTodo = (
     createdAt: Date.now(),
   };
   const updatedTodos = [...todos, newTodo];
-  saveTodos(workspaceUri, globalState, updatedTodos);
+  await saveTodos(workspaceState, updatedTodos);
   return updatedTodos;
 };
 
-export const toggleTodo = (
-  workspaceUri: vscode.Uri,
-  globalState: vscode.Memento,
+export const toggleTodo = async (
+  todos: Todo[],
+  workspaceState: vscode.Memento,
   id: number
-): Todo[] => {
-  const todos = loadTodos(workspaceUri, globalState);
+): Promise<Todo[]> => {
   const updatedTodos = todos.map((todo) =>
     todo.id === id ? { ...todo, completed: !todo.completed } : todo
   );
-  saveTodos(workspaceUri, globalState, updatedTodos);
+  await saveTodos(workspaceState, updatedTodos);
   return updatedTodos;
 };
 
-export const deleteTodo = (
-  workspaceUri: vscode.Uri,
-  globalState: vscode.Memento,
+export const deleteTodo = async (
+  todos: Todo[],
+  workspaceState: vscode.Memento,
   id: number
-): Todo[] => {
-  const todos = loadTodos(workspaceUri, globalState);
+): Promise<Todo[]> => {
   const updatedTodos = todos.filter((todo) => todo.id !== id);
-  saveTodos(workspaceUri, globalState, updatedTodos);
+  await saveTodos(workspaceState, updatedTodos);
   return updatedTodos;
 };

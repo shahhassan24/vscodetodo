@@ -168,9 +168,17 @@ body {
   transition: border-color 140ms ease, background 140ms ease;
 }
 
+.todo-checkbox:hover {
+  background: var(--vscode-input-background);
+}
+
 .todo-item.completed .todo-checkbox {
   background: var(--vscode-button-background);
   border-color: var(--vscode-button-background);
+}
+
+.todo-item.completed .todo-checkbox:hover {
+  background: var(--vscode-button-background);
 }
 
 .todo-copy {
@@ -185,6 +193,10 @@ body {
   background: transparent;
   text-align: left;
   cursor: pointer;
+}
+
+.todo-title-button:hover {
+  background: transparent;
 }
 
 .todo-text {
@@ -230,6 +242,7 @@ body {
 }
 
 .delete-button:hover {
+  background: transparent;
   color: var(--vscode-errorForeground);
 }
 

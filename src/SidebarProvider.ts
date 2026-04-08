@@ -9,11 +9,17 @@ import {
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   private readonly _extensionUri: vscode.Uri;
+  private readonly _workspaceState: vscode.Memento;
   private readonly _globalState: vscode.Memento;
   private _view?: vscode.WebviewView;
 
-  constructor(extensionUri: vscode.Uri, globalState: vscode.Memento) {
+  constructor(
+    extensionUri: vscode.Uri,
+    workspaceState: vscode.Memento,
+    globalState: vscode.Memento
+  ) {
     this._extensionUri = extensionUri;
+    this._workspaceState = workspaceState;
     this._globalState = globalState;
   }
 
@@ -41,8 +47,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     data: unknown
   ): Promise<void> {
     const message = data as { type: string; text?: string; id?: number };
-
     const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+
     if (!workspaceUri) {
       this._view?.webview.postMessage({
         type: 'error',
@@ -51,10 +57,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    let todos;
+    const todos = await loadTodos(
+      workspaceUri,
+      this._workspaceState,
+      this._globalState
+    );
+
+    let updatedTodos = todos;
     switch (message.type) {
       case 'load':
-        todos = loadTodos(workspaceUri, this._globalState);
         this._view?.webview.postMessage({ type: 'todos', data: todos });
         break;
 
@@ -62,24 +73,36 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         if (!message.text) {
           return;
         }
-        todos = addTodo(workspaceUri, this._globalState, message.text);
-        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        updatedTodos = await addTodo(
+          todos,
+          this._workspaceState,
+          message.text
+        );
+        this._view?.webview.postMessage({ type: 'todos', data: updatedTodos });
         break;
 
       case 'toggle':
         if (typeof message.id !== 'number') {
           return;
         }
-        todos = toggleTodo(workspaceUri, this._globalState, message.id);
-        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        updatedTodos = await toggleTodo(
+          todos,
+          this._workspaceState,
+          message.id
+        );
+        this._view?.webview.postMessage({ type: 'todos', data: updatedTodos });
         break;
 
       case 'delete':
         if (typeof message.id !== 'number') {
           return;
         }
-        todos = deleteTodo(workspaceUri, this._globalState, message.id);
-        this._view?.webview.postMessage({ type: 'todos', data: todos });
+        updatedTodos = await deleteTodo(
+          todos,
+          this._workspaceState,
+          message.id
+        );
+        this._view?.webview.postMessage({ type: 'todos', data: updatedTodos });
         break;
 
       default:
